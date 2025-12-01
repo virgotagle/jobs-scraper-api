@@ -2,16 +2,17 @@
 
 from typing import Generator
 
+from .config import settings
 from .repositories import SQLiteRepository
 
 # Global repository instance
 _repository: SQLiteRepository | None = None
 
 
-def init_repository(db_url: str = "sqlite:///jobs.db") -> None:
+def init_repository() -> None:
     """Initialize the repository."""
     global _repository
-    _repository = SQLiteRepository(db_url)
+    _repository = SQLiteRepository(settings.database_url)
 
 
 def get_repository() -> Generator[SQLiteRepository, None, None]:

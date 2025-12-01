@@ -10,3 +10,6 @@ wheels/
 .pytest_cache/
 .github/
 jobs.db
+
+# Environment variables
+.env

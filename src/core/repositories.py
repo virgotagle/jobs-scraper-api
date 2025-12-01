@@ -7,13 +7,12 @@ from sqlalchemy import create_engine, or_
 from sqlalchemy.orm import Session, joinedload
 
 from .models import Base, JobDetailsModel, JobListingModel
-from .schemas import JobDetailsSchema, JobListingSchema
 
 
 class SQLiteRepository:
     """SQLite database repository for job listings and details."""
 
-    def __init__(self, db_url: str = "sqlite:///jobs.db") -> None:
+    def __init__(self, db_url: str) -> None:
         """Initialize repository with database connection."""
         self.db_url = db_url
 
