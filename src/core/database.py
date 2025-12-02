@@ -3,6 +3,7 @@
 from typing import Generator
 
 from .config import settings
+from .exceptions import DatabaseError
 from .repositories import SQLiteRepository
 
 # Global repository instance
@@ -18,7 +19,9 @@ def init_repository() -> None:
 def get_repository() -> Generator[SQLiteRepository, None, None]:
     """Dependency to get repository instance."""
     if _repository is None:
-        raise RuntimeError("Repository not initialized")
+        raise DatabaseError(
+            "Repository not initialized. Application startup may have failed."
+        )
     yield _repository
 
 

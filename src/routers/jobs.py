@@ -2,9 +2,10 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from ..core.database import get_repository
+from ..core.exceptions import InvalidInputError, JobNotFoundError
 from ..core.repositories import SQLiteRepository
 from ..core.schemas import JobListingResponse, JobWithDetailsResponse
 
@@ -21,6 +22,11 @@ def get_all_jobs(
     repository: SQLiteRepository = Depends(get_repository),
 ) -> list[JobListingResponse]:
     """Get all job listings with optional filters."""
+    if skip < 0:
+        raise InvalidInputError("skip must be a non-negative integer")
+    if limit < 1 or limit > 1000:
+        raise InvalidInputError("limit must be between 1 and 1000")
+
     jobs = repository.get_all_jobs(
         job_classification=job_classification,
         job_sub_classification=job_sub_classification,
@@ -63,6 +69,13 @@ def search_jobs(
     repository: SQLiteRepository = Depends(get_repository),
 ) -> list[JobListingResponse]:
     """Search jobs by keyword across title, summary, company, location, and details."""
+    if not keyword or len(keyword.strip()) < 2:
+        raise InvalidInputError("Search keyword must be at least 2 characters long")
+    if skip < 0:
+        raise InvalidInputError("skip must be a non-negative integer")
+    if limit < 1 or limit > 1000:
+        raise InvalidInputError("limit must be between 1 and 1000")
+
     jobs = repository.search_jobs(keyword=keyword, skip=skip, limit=limit)
     return [JobListingResponse.model_validate(job) for job in jobs]
 
@@ -76,7 +89,7 @@ def get_job_by_id(
     job = repository.get_job_by_id(job_id)
 
     if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
+        raise JobNotFoundError(f"Job with ID '{job_id}' not found")
 
     # Combine listing and details data
     job_data = {

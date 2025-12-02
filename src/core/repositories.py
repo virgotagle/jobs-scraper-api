@@ -6,6 +6,7 @@ from typing import Optional
 from sqlalchemy import create_engine, or_
 from sqlalchemy.orm import Session, joinedload
 
+from .exceptions import DatabaseError
 from .models import Base, JobDetailsModel, JobListingModel
 
 
@@ -21,7 +22,9 @@ class SQLiteRepository:
             Base.metadata.create_all(self.engine)
         except Exception as e:
             logging.error(f"Failed to initialize database at {self.db_url}: {e}")
-            raise RuntimeError(f"Failed to initialize database: {e}") from e
+            raise DatabaseError(
+                f"Failed to initialize database at {self.db_url}"
+            ) from e
 
     def close(self):
         """Close database connection and clean up resources."""

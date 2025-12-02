@@ -22,6 +22,7 @@ To collect fresh job data, set up and run the jobs-scraper following its [instal
 - **Framework**: FastAPI 0.122.0+
 - **Database**: SQLite with SQLAlchemy 2.0.44+
 - **Validation**: Pydantic 2.12.5+
+- **Configuration**: Pydantic Settings 2.0.0+
 - **Python**: 3.12+
 - **Testing**: pytest 8.3.4+
 
@@ -31,9 +32,13 @@ To collect fresh job data, set up and run the jobs-scraper following its [instal
 jobs-scraper-api/
 ├── main.py                      # FastAPI application entry point
 ├── pyproject.toml               # Project dependencies and metadata
+├── .env                         # Environment variables (not in git)
+├── .env.example                 # Environment variables template
 ├── src/
 │   ├── core/
+│   │   ├── config.py            # Configuration management
 │   │   ├── database.py          # Database connection management
+│   │   ├── exceptions.py        # Custom exception classes
 │   │   ├── models.py            # SQLAlchemy ORM models
 │   │   ├── repositories.py      # Data access layer
 │   │   └── schemas.py           # Pydantic schemas for API
@@ -91,8 +96,12 @@ Query parameters:
 - `job_classification` (optional): Filter by job category
 - `job_sub_classification` (optional): Filter by subcategory
 - `work_arrangements` (optional): Filter by work arrangement
-- `skip` (default: 0): Pagination offset
-- `limit` (default: 100, max: 100): Results per page
+- `skip` (default: 0): Pagination offset (must be ≥ 0)
+- `limit` (default: 100): Results per page (must be 1-1000)
+
+Error responses:
+- `400`: Invalid skip or limit values
+- `500`: Database error
 
 #### Get Job Details
 ```
@@ -100,14 +109,23 @@ GET /jobs/{job_id}
 ```
 Returns full job information including extended details.
 
+Error responses:
+- `404`: Job not found
+- `500`: Database error
+
 #### Search Jobs
 ```
 GET /jobs/search
 ```
 Query parameters:
-- `keyword` (required): Search term (searches across title, summary, company, location, and details)
-- `skip` (default: 0): Pagination offset
-- `limit` (default: 100): Results per page
+- `keyword` (required): Search term (minimum 2 characters, searches across title, summary, company, location, and details)
+- `skip` (default: 0): Pagination offset (must be ≥ 0)
+- `limit` (default: 100): Results per page (must be 1-1000)
+
+Error responses:
+- `400`: Invalid keyword, skip, or limit values
+- `422`: Missing required keyword parameter
+- `500`: Database error
 
 #### Get Classifications
 ```
@@ -126,6 +144,45 @@ Returns list of all unique job sub-classifications.
 GET /jobs/work-arrangements
 ```
 Returns list of all unique work arrangement types.
+
+## Configuration
+
+### Environment Variables
+
+The API uses environment variables for configuration management through Pydantic Settings. Configuration is loaded from a `.env` file in the project root.
+
+#### Available Settings
+
+- `DATABASE_URL`: Database connection string (default: `sqlite:///jobs.db`)
+
+#### Setup Configuration
+
+1. Copy the example environment file:
+```bash
+cp .env.example .env
+```
+
+2. Edit `.env` with your settings:
+```bash
+# For SQLite (default)
+DATABASE_URL=sqlite:///jobs.db
+
+# For PostgreSQL
+# DATABASE_URL=postgresql://user:password@localhost/dbname
+
+# For MySQL
+# DATABASE_URL=mysql://user:password@localhost/dbname
+```
+
+**Important**: The `.env` file is git-ignored and should never be committed. Use `.env.example` as a template.
+
+### Configuration File
+
+Configuration is managed in `src/core/config.py` using Pydantic Settings. To add new configuration options:
+
+1. Add the field to the `Settings` class in `config.py`
+2. Add the variable to `.env.example` with documentation
+3. Update `.env` with your actual value
 
 ## Installation
 
@@ -151,7 +208,16 @@ uv sync
 pip install -e .
 ```
 
-3. Install development dependencies (already included with uv sync):
+3. Set up configuration:
+```bash
+# Copy the environment template
+cp .env.example .env
+
+# Edit .env with your settings (optional, defaults work for local development)
+# DATABASE_URL=sqlite:///jobs.db
+```
+
+4. Install development dependencies (already included with uv sync):
 ```bash
 # Development dependencies are automatically installed with uv sync
 # To install only production dependencies:
@@ -249,6 +315,76 @@ pytest --cov=src --cov-report=html
 
 **Note**: Integration tests in `test_api.py` will automatically skip if `jobs.db` is not found in the project root.
 
+## Error Handling
+
+The API implements comprehensive error handling with custom exception classes and user-friendly error messages.
+
+### HTTP Status Codes
+
+- **200 OK**: Successful request
+- **400 Bad Request**: Invalid input (validation errors, business logic violations)
+- **404 Not Found**: Resource not found (job ID doesn't exist)
+- **422 Unprocessable Entity**: Request validation error (missing required fields, invalid types)
+- **500 Internal Server Error**: Database or server error
+
+### Error Response Format
+
+All errors return JSON with an `error` field:
+
+```json
+{
+  "error": "Description of what went wrong"
+}
+```
+
+For validation errors (422), additional details are provided:
+
+```json
+{
+  "error": "Validation error",
+  "details": [
+    "field_name: error message"
+  ]
+}
+```
+
+### Custom Exceptions
+
+The API uses three custom exception classes defined in `src/core/exceptions.py`:
+
+- **`JobNotFoundError`**: Raised when a requested job ID doesn't exist (404)
+- **`InvalidInputError`**: Raised for business logic validation failures (400)
+- **`DatabaseError`**: Raised for database operation failures (500)
+
+### Validation Rules
+
+#### Pagination
+- `skip`: Must be a non-negative integer (≥ 0)
+- `limit`: Must be between 1 and 1000
+
+#### Search
+- `keyword`: Must be at least 2 characters long
+
+### Example Error Responses
+
+**Invalid limit:**
+```bash
+curl "http://localhost:8000/jobs?limit=2000"
+# Response: {"error": "limit must be between 1 and 1000"}
+```
+
+**Job not found:**
+```bash
+curl "http://localhost:8000/jobs/invalid-id"
+# Response: {"error": "Job with ID 'invalid-id' not found"}
+```
+
+**Short search keyword:**
+```bash
+curl "http://localhost:8000/jobs/search?keyword=a"
+# Response: {"error": "Search keyword must be at least 2 characters long"}
+```
+
 ## Development
 
 ### Code Style
@@ -266,43 +402,31 @@ The application uses FastAPI's dependency injection system:
 - `get_repository()`: Provides database repository instance to route handlers
 - Repository lifecycle managed through application lifespan events
 
-### Error Handling
+### Error Handling Implementation
 
-- 404: Resource not found
-- 500: Database initialization or connection errors
-- Validation errors automatically handled by Pydantic
+The application uses a global exception handler system:
+- Custom exceptions are caught and converted to appropriate HTTP responses
+- Pydantic validation errors are transformed into user-friendly messages
+- Generic exceptions are caught to prevent information leakage
+- All database errors return generic 500 responses without exposing internals
 
-## Configuration
-
-### Database URL
-
-Default: `sqlite:///jobs.db`
-
-To change, modify `init_repository()` call in `main.py`:
-
-```python
-init_repository(db_url="sqlite:///custom_path.db")
-```
-
-### API Settings
-
-Configure in `main.py`:
-- `title`: API title
-- `description`: API description
-- `version`: API version
+See the [Error Handling](#error-handling) section for detailed status codes and response formats.
 
 ## Deployment Considerations
 
 ### Production Checklist
 
-1. **Database**: Consider PostgreSQL/MySQL for production
-2. **Environment Variables**: Externalize configuration (database URL, secrets)
+1. **Database**: Consider PostgreSQL/MySQL for production (update `DATABASE_URL` in `.env`)
+2. **Environment Variables**: Set production values in deployment platform (Railway, Render, etc.)
+   - Never commit `.env` file
+   - Use platform environment variable management
 3. **CORS**: Configure CORS middleware if needed for web clients
 4. **Rate Limiting**: Add rate limiting for public APIs
 5. **Logging**: Configure structured logging
 6. **Monitoring**: Add health check endpoint and metrics
 7. **Authentication**: Implement API authentication if required
-8. **HTTPS**: Use reverse proxy (nginx/Caddy) with SSL
+8. **HTTPS**: Use reverse proxy (nginx/Caddy) with SSL or platform SSL
+9. **Error Logging**: Consider error tracking service (Sentry, etc.)
 
 ### Performance Optimization
 

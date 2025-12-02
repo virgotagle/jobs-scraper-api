@@ -77,4 +77,5 @@ def test_get_job_by_id_not_found():
     """Test getting non-existent job returns 404."""
     response = client.get("/jobs/nonexistent-id")
     assert response.status_code == 404
-    assert response.json()["detail"] == "Job not found"
+    assert "error" in response.json()
+    assert "nonexistent-id" in response.json()["error"]
