@@ -5,10 +5,17 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import create_engine, or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from .exceptions import DatabaseError
-from .models import APIKeyModel, Base, JobDetailsModel, JobListingModel
+from .models import (
+    APIKeyModel,
+    Base,
+    FavoriteJobModel,
+    JobDetailsModel,
+    JobListingModel,
+)
 
 
 class SQLiteRepository:
@@ -207,3 +214,84 @@ class SQLiteRepository:
                 session.commit()
                 return True
             return False
+
+    def add_favorite_job(
+        self, api_key_id: int, job_id: str, notes: str | None = None
+    ) -> FavoriteJobModel:
+        """Add a job to user's favorites."""
+        with Session(self.engine) as session:
+            try:
+                favorite = FavoriteJobModel(
+                    api_key_id=api_key_id, job_id=job_id, notes=notes
+                )
+                session.add(favorite)
+                session.commit()
+                session.refresh(favorite)
+
+                # Load the job relationship
+                favorite = (
+                    session.query(FavoriteJobModel)
+                    .filter(FavoriteJobModel.id == favorite.id)
+                    .options(joinedload(FavoriteJobModel.job))
+                    .first()
+                )
+                return favorite
+            except IntegrityError:
+                session.rollback()
+                # If job already favorited, return existing favorite
+                favorite = (
+                    session.query(FavoriteJobModel)
+                    .filter(
+                        FavoriteJobModel.api_key_id == api_key_id,
+                        FavoriteJobModel.job_id == job_id,
+                    )
+                    .options(joinedload(FavoriteJobModel.job))
+                    .first()
+                )
+                return favorite
+
+    def remove_favorite_job(self, api_key_id: int, job_id: str) -> bool:
+        """Remove a job from user's favorites. Return True if removed, False if not found."""
+        with Session(self.engine) as session:
+            favorite = (
+                session.query(FavoriteJobModel)
+                .filter(
+                    FavoriteJobModel.api_key_id == api_key_id,
+                    FavoriteJobModel.job_id == job_id,
+                )
+                .first()
+            )
+            if favorite:
+                session.delete(favorite)
+                session.commit()
+                return True
+            return False
+
+    def get_favorite_jobs(
+        self, api_key_id: int, skip: int = 0, limit: int = 100
+    ) -> list[FavoriteJobModel]:
+        """Get user's favorite jobs with pagination."""
+        with Session(self.engine) as session:
+            favorites = (
+                session.query(FavoriteJobModel)
+                .filter(FavoriteJobModel.api_key_id == api_key_id)
+                .options(joinedload(FavoriteJobModel.job))
+                .order_by(FavoriteJobModel.created_at.desc())
+                .offset(skip)
+                .limit(limit)
+                .all()
+            )
+            return favorites
+
+    def is_job_favorited(self, api_key_id: int, job_id: str) -> bool:
+        """Check if a job is favorited by the user."""
+        with Session(self.engine) as session:
+            favorite = (
+                session.query(FavoriteJobModel)
+                .filter(
+                    FavoriteJobModel.api_key_id == api_key_id,
+                    FavoriteJobModel.job_id == job_id,
+                )
+                .first()
+            )
+            return favorite is not None

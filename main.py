@@ -15,7 +15,7 @@ from src.core.exceptions import (
     JobNotFoundError,
     UnauthorizedError,
 )
-from src.routers import jobs
+from src.routers import favorites, jobs
 
 
 @asynccontextmanager
@@ -45,6 +45,7 @@ app.add_middleware(
 )
 
 app.include_router(jobs.router)
+app.include_router(favorites.router)
 
 
 # Exception handlers

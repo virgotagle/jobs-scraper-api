@@ -2,7 +2,16 @@
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -64,3 +73,25 @@ class APIKeyModel(Base):
     expires_at = Column(DateTime, nullable=True)
     rate_limit = Column(Integer, default=1000, nullable=False)
     request_count = Column(Integer, default=0, nullable=False)
+
+    # Relationship to FavoriteJobModel
+    favorites = relationship("FavoriteJobModel", back_populates="api_key")
+
+
+class FavoriteJobModel(Base):
+    """User's favorite/saved jobs."""
+
+    __tablename__ = "favorite_jobs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    api_key_id = Column(Integer, ForeignKey("api_keys.id"), nullable=False)
+    job_id = Column(String, ForeignKey("job_listings.job_id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    notes = Column(Text, nullable=True)
+
+    # Relationships
+    api_key = relationship("APIKeyModel", back_populates="favorites")
+    job = relationship("JobListingModel")
+
+    # Unique constraint: each user can favorite a job only once
+    __table_args__ = (UniqueConstraint("api_key_id", "job_id", name="unique_favorite"),)

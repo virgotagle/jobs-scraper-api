@@ -33,6 +33,8 @@ API: `http://localhost:8000` • Docs: `http://localhost:8000/docs`
 
 **`api_keys`** (authentication): `id` • `key_hash` • `key_prefix` • `name` • `email` • `company` • `is_active` • `created_at` • `last_used_at` • `expires_at` • `rate_limit` • `request_count`
 
+**`favorite_jobs`** (user favorites): `id` (PK) • `api_key_id` (FK) • `job_id` (FK) • `created_at` • `notes` • Unique constraint: `(api_key_id, job_id)`
+
 ## API Endpoints
 
 | Endpoint | Method | Description | Key Params |
@@ -44,6 +46,10 @@ API: `http://localhost:8000` • Docs: `http://localhost:8000/docs`
 | `/jobs/classifications` | GET | List all classifications | - |
 | `/jobs/sub-classifications` | GET | List all sub-classifications | - |
 | `/jobs/work-arrangements` | GET | List all work arrangements | - |
+| `/favorites/` | GET | List user's favorite jobs | `skip=0`, `limit=100` (requires auth) |
+| `/favorites/{job_id}` | POST | Add job to favorites | `notes` (optional, in body) (requires auth) |
+| `/favorites/{job_id}` | DELETE | Remove job from favorites | - (requires auth) |
+| `/favorites/{job_id}/status` | GET | Check if job is favorited | - (requires auth) |
 
 **Validation**: `skip` ≥ 0 • `limit` 1-1000 • `keyword` min 2 chars
 
@@ -86,6 +92,8 @@ Note: `test_api.py` requires `jobs.db` to exist.
 ## Authentication (Optional)
 
 API key authentication is **disabled by default**. Enable with `REQUIRE_API_KEY=true`.
+
+**Note**: When `REQUIRE_API_KEY=false`, job listing endpoints (`/jobs/*`) are public, but `/favorites` endpoints always require authentication since favorites are user-specific.
 
 **Generate keys:**
 ```bash

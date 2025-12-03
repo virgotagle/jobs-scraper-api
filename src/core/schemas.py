@@ -76,3 +76,28 @@ class JobWithDetailsResponse(BaseModel):
     details: Optional[str] = None
     is_verified: Optional[bool] = None
     expires_at: Optional[datetime] = None
+
+
+class FavoriteJobCreate(BaseModel):
+    """Schema for creating a favorite job."""
+
+    notes: Optional[str] = None
+
+
+class FavoriteJobResponse(BaseModel):
+    """Favorite job response schema."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    job_id: str
+    created_at: datetime
+    notes: Optional[str] = None
+    job: JobListingResponse
+
+
+class FavoriteStatusResponse(BaseModel):
+    """Response schema for checking if a job is favorited."""
+
+    job_id: str
+    is_favorited: bool
