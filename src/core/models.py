@@ -1,6 +1,8 @@
-"""SQLAlchemy models for job scraper database."""
+"""Database models for job listings, details, and API keys."""
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text
+from datetime import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -43,3 +45,22 @@ class JobDetailsModel(Base):
 
     # Relationship back to JobListingModel
     listing = relationship("JobListingModel", back_populates="details")
+
+
+class APIKeyModel(Base):
+    """API key for authentication and authorization."""
+
+    __tablename__ = "api_keys"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    key_hash = Column(String, unique=True, nullable=False, index=True)
+    key_prefix = Column(String(12), nullable=False)
+    name = Column(String, nullable=False)
+    email = Column(String, nullable=False, index=True)
+    company = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_used_at = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime, nullable=True)
+    rate_limit = Column(Integer, default=1000, nullable=False)
+    request_count = Column(Integer, default=0, nullable=False)

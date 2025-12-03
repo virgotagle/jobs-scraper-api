@@ -1,18 +1,31 @@
-"""API routes for job listings."""
+"""Job listing endpoints."""
 
 from typing import Optional
 
 from fastapi import APIRouter, Depends
 
+from ..core.auth import get_api_key
+from ..core.config import settings
 from ..core.database import get_repository
 from ..core.exceptions import InvalidInputError, JobNotFoundError
+from ..core.models import APIKeyModel
 from ..core.repositories import SQLiteRepository
 from ..core.schemas import JobListingResponse, JobWithDetailsResponse
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
-@router.get("/", response_model=list[JobListingResponse])
+# Conditional API key dependency
+def optional_api_key() -> list:
+    """Return API key dependency list if authentication is required."""
+    if settings.require_api_key:
+        return [Depends(get_api_key)]
+    return []
+
+
+@router.get(
+    "/", response_model=list[JobListingResponse], dependencies=optional_api_key()
+)
 def get_all_jobs(
     job_classification: Optional[str] = None,
     job_sub_classification: Optional[str] = None,
@@ -21,7 +34,7 @@ def get_all_jobs(
     limit: int = 100,
     repository: SQLiteRepository = Depends(get_repository),
 ) -> list[JobListingResponse]:
-    """Get all job listings with optional filters."""
+    """Get job listings with optional filters and pagination."""
     if skip < 0:
         raise InvalidInputError("skip must be a non-negative integer")
     if limit < 1 or limit > 1000:
@@ -37,7 +50,9 @@ def get_all_jobs(
     return [JobListingResponse.model_validate(job) for job in jobs]
 
 
-@router.get("/classifications", response_model=list[str])
+@router.get(
+    "/classifications", response_model=list[str], dependencies=optional_api_key()
+)
 def get_job_classifications(
     repository: SQLiteRepository = Depends(get_repository),
 ) -> list[str]:
@@ -45,7 +60,9 @@ def get_job_classifications(
     return repository.get_all_job_classifications()
 
 
-@router.get("/work-arrangements", response_model=list[str])
+@router.get(
+    "/work-arrangements", response_model=list[str], dependencies=optional_api_key()
+)
 def get_work_arrangements(
     repository: SQLiteRepository = Depends(get_repository),
 ) -> list[str]:
@@ -53,7 +70,9 @@ def get_work_arrangements(
     return repository.get_all_work_arrangements()
 
 
-@router.get("/sub-classifications", response_model=list[str])
+@router.get(
+    "/sub-classifications", response_model=list[str], dependencies=optional_api_key()
+)
 def get_job_sub_classifications(
     repository: SQLiteRepository = Depends(get_repository),
 ) -> list[str]:
@@ -61,14 +80,16 @@ def get_job_sub_classifications(
     return repository.get_all_job_sub_classifications()
 
 
-@router.get("/search", response_model=list[JobListingResponse])
+@router.get(
+    "/search", response_model=list[JobListingResponse], dependencies=optional_api_key()
+)
 def search_jobs(
     keyword: str,
     skip: int = 0,
     limit: int = 100,
     repository: SQLiteRepository = Depends(get_repository),
 ) -> list[JobListingResponse]:
-    """Search jobs by keyword across title, summary, company, location, and details."""
+    """Search jobs by keyword in multiple fields."""
     if not keyword or len(keyword.strip()) < 2:
         raise InvalidInputError("Search keyword must be at least 2 characters long")
     if skip < 0:
@@ -80,12 +101,14 @@ def search_jobs(
     return [JobListingResponse.model_validate(job) for job in jobs]
 
 
-@router.get("/{job_id}", response_model=JobWithDetailsResponse)
+@router.get(
+    "/{job_id}", response_model=JobWithDetailsResponse, dependencies=optional_api_key()
+)
 def get_job_by_id(
     job_id: str,
     repository: SQLiteRepository = Depends(get_repository),
 ) -> JobWithDetailsResponse:
-    """Get a specific job listing with full details."""
+    """Get job listing with full details by ID."""
     job = repository.get_job_by_id(job_id)
 
     if not job:

@@ -1,4 +1,4 @@
-"""Custom exception classes for the Jobs API."""
+"""Custom exceptions for API error handling."""
 
 
 class JobNotFoundError(Exception):
@@ -15,5 +15,11 @@ class DatabaseError(Exception):
 
 class InvalidInputError(Exception):
     """Raised when business logic validation fails."""
+
+    pass
+
+
+class UnauthorizedError(Exception):
+    """Raised when API key authentication fails."""
 
     pass

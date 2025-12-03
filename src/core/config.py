@@ -14,5 +14,14 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///jobs.db"
 
+    # CORS settings
+    cors_origins: list[str] = ["*"]
+    cors_allow_credentials: bool = True
+    cors_allow_methods: list[str] = ["*"]
+    cors_allow_headers: list[str] = ["*"]
+
+    # API Key authentication
+    require_api_key: bool = False
+
 
 settings = Settings()

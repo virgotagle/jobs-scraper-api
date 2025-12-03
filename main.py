@@ -4,10 +4,17 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from src.core.config import settings
 from src.core.database import close_repository, init_repository
-from src.core.exceptions import DatabaseError, InvalidInputError, JobNotFoundError
+from src.core.exceptions import (
+    DatabaseError,
+    InvalidInputError,
+    JobNotFoundError,
+    UnauthorizedError,
+)
 from src.routers import jobs
 
 
@@ -28,6 +35,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Configure CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=settings.cors_allow_credentials,
+    allow_methods=settings.cors_allow_methods,
+    allow_headers=settings.cors_allow_headers,
+)
+
 app.include_router(jobs.router)
 
 
@@ -46,6 +62,14 @@ async def invalid_input_handler(
 ) -> JSONResponse:
     """Handle invalid input errors."""
     return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.exception_handler(UnauthorizedError)
+async def unauthorized_handler(
+    request: Request, exc: UnauthorizedError
+) -> JSONResponse:
+    """Handle unauthorized errors."""
+    return JSONResponse(status_code=401, content={"error": str(exc)})
 
 
 @app.exception_handler(DatabaseError)

@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class JobListingSchema(BaseModel):
-    """Schema for job listing data from job search platforms."""
+    """Job listing data schema."""
 
     job_id: str
     title: str
@@ -23,7 +23,7 @@ class JobListingSchema(BaseModel):
 
 
 class JobDetailsSchema(BaseModel):
-    """Schema for detailed job information and metadata."""
+    """Job details and metadata schema."""
 
     job_id: str
     status: str
@@ -34,7 +34,7 @@ class JobDetailsSchema(BaseModel):
 
 
 class JobListingResponse(BaseModel):
-    """Response schema for job listing."""
+    """Job listing response schema."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -54,7 +54,7 @@ class JobListingResponse(BaseModel):
 
 
 class JobWithDetailsResponse(BaseModel):
-    """Response schema for job with full details."""
+    """Job listing with full details response schema."""
 
     model_config = ConfigDict(from_attributes=True)
 
