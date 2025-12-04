@@ -37,7 +37,7 @@ class JobListingModel(Base):
     work_arrangements = Column(String, nullable=True)
 
     # Relationship to JobDetailsModel
-    details = relationship("JobDetailsModel", back_populates="listing")
+    details = relationship("JobDetailsModel", back_populates="listing", uselist=False)
 
 
 class JobDetailsModel(Base):
