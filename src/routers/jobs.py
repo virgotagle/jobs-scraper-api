@@ -4,13 +4,16 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends
 
-from ..core.auth import get_api_key
-from ..core.config import settings
-from ..core.database import get_repository
-from ..core.exceptions import InvalidInputError, JobNotFoundError
-from ..core.models import APIKeyModel
-from ..core.repositories import SQLiteRepository
-from ..core.schemas import JobListingResponse, JobWithDetailsResponse
+from src.core.auth import get_api_key
+from src.core.config import settings
+from src.core.database import get_repository
+from src.core.exceptions import InvalidInputError, JobNotFoundError
+from src.core.repositories import SQLiteRepository
+from src.core.schemas import (
+    JobListingResponse,
+    JobStatsResponse,
+    JobWithDetailsResponse,
+)
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -99,6 +102,15 @@ def search_jobs(
 
     jobs = repository.search_jobs(keyword=keyword, skip=skip, limit=limit)
     return [JobListingResponse.model_validate(job) for job in jobs]
+
+
+@router.get("/stats", response_model=JobStatsResponse, dependencies=optional_api_key())
+def get_job_stats(
+    repository: SQLiteRepository = Depends(get_repository),
+) -> JobStatsResponse:
+    """Get job system statistics."""
+    stats = repository.get_job_stats()
+    return JobStatsResponse(**stats)
 
 
 @router.get(

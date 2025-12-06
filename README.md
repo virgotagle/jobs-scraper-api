@@ -46,6 +46,7 @@ API: `http://localhost:8000` • Docs: `http://localhost:8000/docs`
 | `/jobs/classifications` | GET | List all classifications | - |
 | `/jobs/sub-classifications` | GET | List all sub-classifications | - |
 | `/jobs/work-arrangements` | GET | List all work arrangements | - |
+| `/jobs/stats` | GET | Get job statistics (total and new) | - |
 | `/favorites/` | GET | List user's favorite jobs | `skip=0`, `limit=100` (requires auth) |
 | `/favorites/{job_id}` | POST | Add job to favorites | `notes` (optional, in body) (requires auth) |
 | `/favorites/{job_id}` | DELETE | Remove job from favorites | - (requires auth) |
@@ -84,6 +85,7 @@ cp database/jobs.db /path/to/jobs-scraper-api/
 ```bash
 pytest                                            # All tests
 pytest tests/test_api.py                         # API integration tests
+pytest tests/test_favorites.py                   # Favorites integration tests
 pytest --cov=src --cov-report=html               # Coverage report
 ```
 

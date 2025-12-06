@@ -2,8 +2,9 @@
 
 from typing import Generator
 
-from .config import settings
-from .exceptions import DatabaseError
+from src.core.config import settings
+from src.core.exceptions import DatabaseError
+
 from .repositories import SQLiteRepository
 
 # Global repository instance

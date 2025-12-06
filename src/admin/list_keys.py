@@ -2,7 +2,7 @@
 
 import argparse
 
-from ..core.database import close_repository, init_repository
+from src.core.database import close_repository, init_repository
 
 
 def main() -> None:

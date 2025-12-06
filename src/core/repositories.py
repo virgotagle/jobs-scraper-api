@@ -1,15 +1,15 @@
 """Repository for job and API key data access."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy import create_engine, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
-from .exceptions import DatabaseError
-from .models import (
+from src.core.exceptions import DatabaseError
+from src.core.models import (
     APIKeyModel,
     Base,
     FavoriteJobModel,
@@ -67,6 +67,20 @@ class SQLiteRepository:
 
             jobs = query.offset(skip).limit(limit).all()
             return jobs
+
+    def get_job_stats(self) -> dict[str, int]:
+        """Get job statistics (total and new jobs)."""
+        with Session(self.engine) as session:
+            total_jobs = session.query(JobListingModel).count()
+
+            cutoff_date = datetime.now(timezone.utc) - timedelta(hours=24)
+            new_jobs = (
+                session.query(JobListingModel)
+                .filter(JobListingModel.listing_date >= cutoff_date)
+                .count()
+            )
+
+            return {"total_jobs": total_jobs, "new_jobs": new_jobs}
 
     def get_job_by_id(self, job_id: str) -> Optional[JobListingModel]:
         """Get job listing with details by ID."""

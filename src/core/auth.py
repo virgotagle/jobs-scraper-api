@@ -3,11 +3,11 @@
 from fastapi import Depends, Header
 from fastapi.security import APIKeyHeader
 
-from .database import get_repository
-from .exceptions import UnauthorizedError
-from .models import APIKeyModel
-from .repositories import SQLiteRepository
-from .security import verify_api_key
+from src.core.database import get_repository
+from src.core.exceptions import UnauthorizedError
+from src.core.models import APIKeyModel
+from src.core.repositories import SQLiteRepository
+from src.core.security import verify_api_key
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
@@ -24,7 +24,7 @@ def get_api_key(
 
     for api_key_model in api_keys:
         if verify_api_key(x_api_key, str(api_key_model.key_hash)):
-            repository.update_api_key_last_used(api_key_model.id.value)
+            repository.update_api_key_last_used(api_key_model.id)
             return api_key_model
 
     raise UnauthorizedError("Invalid API key")

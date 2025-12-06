@@ -34,7 +34,7 @@ def add_favorite_job(
 
     # Add to favorites
     favorite = repository.add_favorite_job(
-        api_key_id=api_key.id.value,
+        api_key_id=api_key.id,
         job_id=job_id,
         notes=favorite_data.notes,
     )
@@ -49,7 +49,7 @@ def remove_favorite_job(
     repository: SQLiteRepository = Depends(get_repository),
 ) -> JSONResponse:
     """Remove a job from user's favorites."""
-    removed = repository.remove_favorite_job(api_key_id=api_key.id.value, job_id=job_id)
+    removed = repository.remove_favorite_job(api_key_id=api_key.id, job_id=job_id)
 
     if not removed:
         raise JobNotFoundError(f"Job with ID '{job_id}' not found in your favorites")
@@ -74,7 +74,7 @@ def get_favorite_jobs(
         raise InvalidInputError("limit must be between 1 and 1000")
 
     favorites = repository.get_favorite_jobs(
-        api_key_id=api_key.id.value, skip=skip, limit=limit
+        api_key_id=api_key.id, skip=skip, limit=limit
     )
 
     return [FavoriteJobResponse.model_validate(fav) for fav in favorites]
@@ -87,8 +87,6 @@ def check_favorite_status(
     repository: SQLiteRepository = Depends(get_repository),
 ) -> FavoriteStatusResponse:
     """Check if a specific job is in user's favorites."""
-    is_favorited = repository.is_job_favorited(
-        api_key_id=api_key.id.value, job_id=job_id
-    )
+    is_favorited = repository.is_job_favorited(api_key_id=api_key.id, job_id=job_id)
 
     return FavoriteStatusResponse(job_id=job_id, is_favorited=is_favorited)

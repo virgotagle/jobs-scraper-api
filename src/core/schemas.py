@@ -101,3 +101,10 @@ class FavoriteStatusResponse(BaseModel):
 
     job_id: str
     is_favorited: bool
+
+
+class JobStatsResponse(BaseModel):
+    """Job statistics response schema."""
+
+    total_jobs: int
+    new_jobs: int

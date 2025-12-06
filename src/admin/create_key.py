@@ -3,8 +3,8 @@
 import argparse
 import sys
 
-from ..core.database import close_repository, init_repository
-from ..core.security import generate_api_key, get_key_prefix, hash_api_key
+from src.core.database import close_repository, init_repository
+from src.core.security import generate_api_key, get_key_prefix, hash_api_key
 
 
 def main() -> None:
