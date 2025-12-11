@@ -13,3 +13,4 @@ jobs.db
 
 # Environment variables
 .env
+jobs-scraper-api.code-workspace

@@ -2,6 +2,7 @@
 
 from typing import Optional
 
+import markdown
 from fastapi import APIRouter, Depends
 
 from src.core.auth import get_api_key
@@ -149,7 +150,9 @@ def get_job_by_id(
             {
                 "status": job.details.status,
                 "is_expired": job.details.is_expired,
-                "details": job.details.details,
+                "details": markdown.markdown(job.details.details)
+                if job.details.details
+                else None,
                 "is_verified": job.details.is_verified,
                 "expires_at": job.details.expires_at,
             }
