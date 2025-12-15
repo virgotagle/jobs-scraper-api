@@ -4,7 +4,7 @@ FastAPI-based REST API for querying job listings from a SQLite database. Consume
 
 ## Stack
 
-- **FastAPI** 0.122.0+ • **SQLAlchemy** 2.0.44+ • **Pydantic** 2.12.5+ • **Python** 3.12+
+- **FastAPI** 0.122.0+ • **SQLAlchemy** 2.0.44+ • **Pydantic** 2.12.5+ • **Python** 3.12+ • **Markdown**
 - **Database**: SQLite (default) • PostgreSQL/MySQL supported
 - **Auth**: Optional API key authentication (bcrypt hashed)
 - **Testing**: pytest 8.3.4+
@@ -86,6 +86,7 @@ cp database/jobs.db /path/to/jobs-scraper-api/
 pytest                                            # All tests
 pytest tests/test_api.py                         # API integration tests
 pytest tests/test_favorites.py                   # Favorites integration tests
+pytest tests/test_job_details_markdown.py        # Markdown conversion tests
 pytest --cov=src --cov-report=html               # Coverage report
 ```
 

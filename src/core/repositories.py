@@ -309,3 +309,13 @@ class SQLiteRepository:
                 .first()
             )
             return favorite is not None
+
+    def get_user_favorite_job_ids(self, api_key_id: int) -> set[str]:
+        """Get set of all job IDs favorited by the user."""
+        with Session(self.engine) as session:
+            favorites = (
+                session.query(FavoriteJobModel.job_id)
+                .filter(FavoriteJobModel.api_key_id == api_key_id)
+                .all()
+            )
+            return {f[0] for f in favorites}

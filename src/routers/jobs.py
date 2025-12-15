@@ -5,10 +5,11 @@ from typing import Optional
 import markdown
 from fastapi import APIRouter, Depends
 
-from src.core.auth import get_api_key
+from src.core.auth import get_api_key, get_optional_api_key
 from src.core.config import settings
 from src.core.database import get_repository
 from src.core.exceptions import InvalidInputError, JobNotFoundError
+from src.core.models import APIKeyModel
 from src.core.repositories import SQLiteRepository
 from src.core.schemas import (
     JobListingResponse,
@@ -37,6 +38,7 @@ def get_all_jobs(
     skip: int = 0,
     limit: int = 100,
     repository: SQLiteRepository = Depends(get_repository),
+    api_key: APIKeyModel | None = Depends(get_optional_api_key),
 ) -> list[JobListingResponse]:
     """Get job listings with optional filters and pagination."""
     if skip < 0:
@@ -51,7 +53,19 @@ def get_all_jobs(
         skip=skip,
         limit=limit,
     )
-    return [JobListingResponse.model_validate(job) for job in jobs]
+
+    favorite_job_ids = set()
+    if api_key:
+        favorite_job_ids = repository.get_user_favorite_job_ids(api_key.id)
+
+    results = []
+    for job in jobs:
+        response = JobListingResponse.model_validate(job)
+        if job.job_id in favorite_job_ids:
+            response.is_favorite = True
+        results.append(response)
+
+    return results
 
 
 @router.get(

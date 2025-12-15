@@ -51,6 +51,7 @@ class JobListingResponse(BaseModel):
     job_classification: Optional[str] = None
     job_sub_classification: Optional[str] = None
     work_arrangements: Optional[str] = None
+    is_favorite: bool = False
 
 
 class JobWithDetailsResponse(BaseModel):

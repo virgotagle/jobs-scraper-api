@@ -29,6 +29,7 @@ Retrieves a paginated list of job listings.
     - `limit` (query, default=100): Number of records to return (max 1000).
 - **Success Response**: `200 OK`
     - Content: List of [JobListingResponse](#joblistingresponse)
+    - **Note**: If `X-API-Key` is provided, `is_favorite` field will reflect user's favorite status.
 
 #### Search Jobs
 Search for jobs using a keyword.
@@ -151,7 +152,8 @@ Check if a specific job is in the user's favorites.
   "work_type": "string | null",
   "job_classification": "string | null",
   "job_sub_classification": "string | null",
-  "work_arrangements": "string | null"
+  "work_arrangements": "string | null",
+  "is_favorite": "boolean (default: false)"
 }
 ```
 
@@ -162,7 +164,7 @@ Includes all fields from **JobListingResponse**, plus:
   ...
   "status": "string | null",
   "is_expired": "boolean | null",
-  "details": "string | null",
+  "details": "string (HTML content) | null",
   "is_verified": "boolean | null",
   "expires_at": "datetime | null"
 }
